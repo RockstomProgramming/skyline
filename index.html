@@ -1,0 +1,65 @@
+<!doctype html> 
+<html lang="en"> 
+    <head>
+        <meta charset="UTF-8" />
+        <title>SKYLINE</title>
+        
+        <script type="text/javascript" src="src/phaser.js"></script>
+	
+        <script src="src/Boot.js"></script>
+        <script src="src/Preloader.js"></script>
+        <script src="src/MainMenu.js"></script>
+        <script src="src/Game.js"></script>
+        <script src="src/GameOver.js"></script>
+        
+        <style type="text/css">
+            body {
+                margin: 0;
+            }
+        </style>
+
+    </head>
+
+    <body>
+        <div id="game"></div>
+
+        <script type="text/javascript">
+            
+            (function () {
+                
+                 /**
+                 * Criando uma instância do jogo com Phaser.Game.
+                 * 		param 1: Largura
+                 * 		param 2: Altura
+                 * 		param 3: Rendering context
+                 * 		param 4: Uma string vazia, essa é a id do elemento DOM em que você
+                 *               gostaria de inserir o elemento canvas que o PHaser criará.
+                 * 		param 5: Um objeto contendo quatro referências a funções essenciais.
+                 */
+                var game = new Phaser.Game( 800, 600, Phaser.Auto, 'game');
+
+                // boot inicial, com configurações de resolução e preload das imagem do preloader
+                game.state.add('Boot', MyGame.Boot);
+
+                // carregamento de todos assets do jogo
+                game.state.add('Preloader', MyGame.Preloader);
+
+                // tela inicial do jogo
+                game.state.add('MainMenu', MyGame.MainMenu);
+
+                // tela do jogo em si
+                game.state.add('Game', MyGame.Game);
+
+                // tela de final de jogo
+                game.state.add('GameOver', MyGame.GameOver);
+
+                //	inicia a primeira classe do jogo
+                game.state.start('Boot');
+
+            })();
+
+        </script>
+
+    </body>
+
+</html>
