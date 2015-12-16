@@ -1,6 +1,6 @@
 // Definição de variaveis locais
 MyGame.Game = function (game) {
-    this.velocidade = 3;
+    this.velocidade = 2;
     this.velocidadeMissel = 5;
     this.tempoMissel = 0;
     this.tempoBala = 0;
@@ -8,6 +8,9 @@ MyGame.Game = function (game) {
     this.qntArvores = 15;
     this.elementosMapa = [];
     this.qntMissil = 10;
+    this.velocidadeInimigo = 1;
+    this.qntInimigos = 5;
+    this.inimigos = [];
 };
 
 MyGame.Game.prototype = {
@@ -20,8 +23,11 @@ MyGame.Game.prototype = {
         this.mapaLayer = this.add.group();
         this.mapaLayer.z = 1
 
-        this.aviaoLayer = this.add.group();
-        this.aviaoLayer.z = 2;
+        this.playerLayer = this.add.group();
+        this.playerLayer.z = 2;
+
+        this.inimigoLayer = this.add.group();
+        this.inimigoLayer.z = 3;
         
         // Distribuição dos elementos nas camadas
         this.fundo = this.add.sprite(0, 0, 'background');
@@ -36,7 +42,9 @@ MyGame.Game.prototype = {
         }
 
         this.player = this.add.sprite(400, 400, 'jogador');
-        this.aviaoLayer.add(this.player);
+        this.playerLayer.add(this.player);
+
+        this.gerarInimigos();
 
         //this.explosao = this.add.sprite(30, 30, 'explosao');
         //this.explosao.animations.add('explodir', [0, 1, 2, 3, 4], 15, true);
@@ -58,15 +66,15 @@ MyGame.Game.prototype = {
 
     update: function() {
         if (this.cursor.up.isDown) {
-            this.player.y -= this.velocidade;
+            this.player.y -= this.velocidade + 1;
         } else if (this.cursor.down.isDown) {
-            this.player.y += this.velocidade;
+            this.player.y += this.velocidade + 1;
         } else if (this.cursor.right.isDown) {
-            this.player.x += this.velocidade;
-             this.player.play('direita');
+            this.player.x += this.velocidade + 1;
+            this.player.play('direita');
         } else if (this.cursor.left.isDown) {
-            this.player.x -= this.velocidade;
-             this.player.play('esquerda');
+            this.player.x -= this.velocidade + 1;
+            this.player.play('esquerda');
         } else {
              this.player.play('centro');
         }
@@ -79,13 +87,73 @@ MyGame.Game.prototype = {
                 tiro.y -= this.velocidadeMissel;
 
                 if (tiro.y < -600) {
+                    tiro.kill();
                     this.tiro.splice(this.tiro.indexOf(tiro), 1);
                 }
             }
         }
 
+        this.movimentarInimigos();
         this.recarregarMissil();
         this.atualizarElementos();
+    },
+
+    movimentarInimigos: function() {
+        for (var i = 0; i < this.inimigos.length; i++) {
+            var inimigo = this.inimigos[i].sprite;
+
+            inimigo.y += this.inimigos[i].velocidade;
+
+            if (inimigo.y > this.game.height) {
+                inimigo.y = -50;
+                inimigo.x = this.rand.between(0, 800);
+                inimigo.velocidade = this.rand.between(1, 2);
+            }
+
+            if (this.inimigos[i].y > this.game.height) {
+                inimigo.missil.kill();
+            }
+
+            this.disparar(this.inimigos[i]);
+        }
+    },
+
+    disparar: function(inimigo) {
+        if (inimigo.disparo == 0) {
+            inimigo.disparo = this.rand.between(0, 600);
+        }
+
+        if (inimigo.sprite.y == inimigo.disparo) {
+            if (!inimigo.missil) {
+                var missil = this.add.sprite(inimigo.sprite.x, inimigo.sprite.y, 'missil_inimigo');
+                this.inimigoLayer.add(missil);
+
+                inimigo.missil = missil;
+            }
+        }
+
+        if (inimigo.missil) {
+            inimigo.missil.y += 2;
+            if (inimigo.missil.y > this.game.height) {
+                inimigo.missil.kill();
+                inimigo.missil = null;
+            }
+        }
+    },
+
+    gerarInimigos: function() {
+        for (var i = 0; i < this.qntInimigos; i++) {
+            var inimigo = this.add.sprite(this.rand.between(0, 800), this.rand.between(-100, 600), 'inimigo');
+            this.inimigoLayer.add(inimigo);
+
+            this.inimigos.push({
+                sprite: inimigo, 
+                velocidade: this.rand.between(1, 3), 
+                missil: null, 
+                disparo: 0,
+                vida: 3
+            });
+        }
     },
 
     recarregarMissil: function() {
