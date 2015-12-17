@@ -11,6 +11,10 @@ MyGame.Preloader.prototype = {
         this.load.image('iniciar', 'images/play.png');
         this.load.image('background', 'images/mapa.png');
         this.load.image('arvore', 'images/arvore.png');
+        this.load.image('planta1', 'images/planta1.png');
+        this.load.image('planta2', 'images/planta2.png');
+        this.load.image('planta3', 'images/planta3.png');
+        this.load.image('pedra', 'images/pedra.png');
         this.load.image('missil', 'images/missil.png');
         this.load.image('missil_inimigo', 'images/missil_inimigo.png');
         this.load.image('bala', 'images/bala2.png');

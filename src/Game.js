@@ -10,7 +10,7 @@ MyGame.Game.prototype = {
         this.tempoMissel = 0;
         this.tempoBala = 0;
         this.tiro = [];
-        this.qntArvores = 15;
+        this.qntArvores = 30;
         this.elementosMapa = [];
         this.qntMissil = 10;
         this.velocidadeInimigo = 1;
@@ -58,7 +58,8 @@ MyGame.Game.prototype = {
         this.rand = new Phaser.RandomDataGenerator();
 
         for (var i = 0; i < this.qntArvores; i++) {
-            var elemento = this.add.sprite(this.rand.between(0,800), this.rand.between(0,600), 'arvore');
+            var key = this.rand.pick(['arvore', 'planta1', 'pedra', 'planta2', 'planta3']);
+            var elemento = this.add.sprite(this.rand.between(0,800), this.rand.between(0,600), key);
             this.mapaLayer.add(elemento);
             this.elementosMapa.push(elemento);
         }
@@ -68,13 +69,10 @@ MyGame.Game.prototype = {
 
         this.gerarInimigos();
 
-        //this.explosao = this.add.sprite(0, 0, 'explosao');
         this.explosaoLayer = this.add.group();
         this.explosaoLayer.createMultiple(2, 'explosao');
         this.explosaoLayer.setAll('anchor.x', 0.5);
         this.explosaoLayer.setAll('anchor.y', 0.5);
-
-        //this.explosao.play('explodir');
 
         this.player.animations.add('esquerda', [2], 5, false);
         this.player.animations.add('centro', [0], 5, false);
