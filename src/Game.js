@@ -16,10 +16,10 @@ MyGame.Game.prototype = {
         this.velocidadeInimigo = 1;
         this.qntInimigos = 5;
         this.inimigos = [];
-        this.maxDanoInimigo = 3;
+        this.maxDanoInimigo = 2;
         this.vidas = 3;
         this.pontos = 0;
-        this.isTirosMultiplos = false;
+        this.isTirosMultiplos = true;
     },
 
     create: function () {
@@ -146,14 +146,42 @@ MyGame.Game.prototype = {
             this.gameOver();
         });
 
-        this.physics.arcade.overlap(this.tiroLayer, this.inimigoLayer, (tiro, inimigo) => {              
-            this.animarColisao(inimigo);
-
+        this.physics.arcade.overlap(this.tiroLayer, this.inimigoLayer, (tiro, inimigo) => {
             tiro.kill();
 
-            inimigo.reset(this.rand.between(0, 800), -50);
+            function getInimigo(array) {
+                for (var i = 0; i < array.length; i++) {
+                    if (array[i].sprite.name == inimigo.name) {
+                        return array[i];
+                    }
+                }
+            }
 
-            this.pontos += 10;
+            function getTiro(array) {
+                 for (var i = 0; i < array.length; i++) {
+                    if (array[i].sprite.name == tiro.name) {
+                        return array[i];
+                    }
+                }
+            }
+
+            var ini = getInimigo(this.inimigos);
+            var proj = getTiro(this.tiro);
+
+            if (proj.tipo == 'MISSIL')
+                ini.dano += 2;
+            else
+                ini.dano++;
+
+            if (ini.dano >= this.maxDanoInimigo) {
+                this.animarColisao(inimigo);
+
+                inimigo.reset(this.rand.between(0, 800), -50);
+
+                this.pontos += 10;
+                ini.dano = 0;
+            }
+            
         });
 
         this.movimentarInimigos();
@@ -189,6 +217,7 @@ MyGame.Game.prototype = {
                 inimigo.y = -50;
                 inimigo.x = this.rand.between(10, 790);
                 inimigo.velocidade = this.rand.between(1, 2);
+                this.inimigos[i].dano = 0;
 
                 if (this.pontos > 0)
                     this.pontos -= 10;
@@ -228,6 +257,8 @@ MyGame.Game.prototype = {
     gerarInimigos: function() {
         for (var i = 0; i < this.qntInimigos; i++) {
             var inimigo = this.add.sprite(this.rand.between(0, 790), -50, 'inimigo');
+            inimigo.name = this.guid();
+
             this.inimigoLayer.add(inimigo);
 
             this.inimigos.push({
@@ -253,9 +284,10 @@ MyGame.Game.prototype = {
                 var y = this.player.y - 10;
 
                 var missil = this.add.sprite(x, y, 'missil');
+                missil.name = this.guid();
                 this.tiroLayer.add(missil);
 
-                this.tiro.push({ sprite: missil });
+                this.tiro.push({ sprite: missil, tipo: 'MISSIL' });
 
                 this.tempoMissel = this.time.now + 200;
                 this.qntMissil --;
@@ -266,6 +298,7 @@ MyGame.Game.prototype = {
                 var y = this.player.y - 10;
 
                 bala = this.add.sprite(x, y, 'bala');
+                bala.name = this.guid();
 
                 this.tiroLayer.add(bala);
 
@@ -273,7 +306,10 @@ MyGame.Game.prototype = {
 
                 if (this.isTirosMultiplos) {
                     bala1 = this.add.sprite(x, y, 'bala');
+                    bala1.name = this.guid();
+
                     bala2 = this.add.sprite(x, y, 'bala');
+                    bala2.name = this.guid();
 
                     this.tiroLayer.add(bala1);
                     this.tiroLayer.add(bala2);
@@ -298,6 +334,16 @@ MyGame.Game.prototype = {
                 this.elementosMapa[i].y += this.velocidade + 2;
             }
         }
+    },
+
+    guid: function() {
+      function s4() {
+        return Math.floor((1 + Math.random()) * 0x10000)
+          .toString(16)
+          .substring(1);
+      }
+
+      return s4() + s4() + '-' + s4() + '-' + s4() + '-' + s4() + '-' + s4() + s4() + s4();
     },
 
     render: function () {
