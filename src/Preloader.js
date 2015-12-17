@@ -13,10 +13,11 @@ MyGame.Preloader.prototype = {
         this.load.image('arvore', 'images/arvore.png');
         this.load.image('missil', 'images/missil.png');
         this.load.image('missil_inimigo', 'images/missil_inimigo.png');
-        this.load.image('bala', 'images/bala.png');
+        this.load.image('bala', 'images/bala2.png');
         this.load.image('inimigo', 'images/inimigo.png');
         this.load.spritesheet('jogador', 'images/player.png', 40, 64);
-        this.load.spritesheet('explosao', 'images/explode.png', 26, 26);
+        //this.load.spritesheet('explosao', 'images/explode2.png', 26, 26);
+        this.load.spritesheet('explosao', 'images/explode.png', 128, 128);
 	},
 
 	create: function () {

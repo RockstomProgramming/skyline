@@ -1,19 +1,25 @@
 // Definição de variaveis locais
 MyGame.Game = function (game) {
-    this.velocidade = 2;
-    this.velocidadeMissel = 5;
-    this.tempoMissel = 0;
-    this.tempoBala = 0;
-    this.tiro = [];
-    this.qntArvores = 15;
-    this.elementosMapa = [];
-    this.qntMissil = 10;
-    this.velocidadeInimigo = 1;
-    this.qntInimigos = 5;
-    this.inimigos = [];
+    this.init();
 };
 
 MyGame.Game.prototype = {
+    init: function() {
+        this.velocidade = 2;
+        this.velocidadeMissel = 5;
+        this.tempoMissel = 0;
+        this.tempoBala = 0;
+        this.tiro = [];
+        this.qntArvores = 15;
+        this.elementosMapa = [];
+        this.qntMissil = 10;
+        this.velocidadeInimigo = 1;
+        this.qntInimigos = 5;
+        this.inimigos = [];
+        this.maxDanoInimigo = 3;
+        this.vidas = 3;
+        this.pontos = 0;
+    },
 
     create: function () {
         // Camadas
@@ -24,10 +30,25 @@ MyGame.Game.prototype = {
         this.mapaLayer.z = 1
 
         this.playerLayer = this.add.group();
+        this.playerLayer.enableBody = true;
         this.playerLayer.z = 2;
 
         this.inimigoLayer = this.add.group();
-        this.inimigoLayer.z = 3;
+        this.inimigoLayer.enableBody = true;
+        this.inimigoLayer.z = 2;
+
+        this.tiroLayer = this.add.group();
+        this.tiroLayer.enableBody = true;
+        this.tiroLayer.z = 2;
+
+        this.tiroInimigoLayer = this.add.group();
+        this.tiroInimigoLayer.enableBody = true;
+        this.tiroInimigoLayer.z = 2;
+
+        this.gameLayer = this.add.group();
+        this.gameLayer.enableBody = true;
+        this.gameLayer.add(this.playerLayer);
+        this.gameLayer.add(this.inimigoLayer);
         
         // Distribuição dos elementos nas camadas
         this.fundo = this.add.sprite(0, 0, 'background');
@@ -46,8 +67,11 @@ MyGame.Game.prototype = {
 
         this.gerarInimigos();
 
-        //this.explosao = this.add.sprite(30, 30, 'explosao');
-        //this.explosao.animations.add('explodir', [0, 1, 2, 3, 4], 15, true);
+        //this.explosao = this.add.sprite(0, 0, 'explosao');
+        this.explosaoLayer = this.add.group();
+        this.explosaoLayer.createMultiple(2, 'explosao');
+        this.explosaoLayer.setAll('anchor.x', 0.5);
+        this.explosaoLayer.setAll('anchor.y', 0.5);
 
         //this.explosao.play('explodir');
 
@@ -57,8 +81,8 @@ MyGame.Game.prototype = {
 
         this.player.play('centro');
 
-         // Iniciando a engine arcade.
-        this.physics.startSystem(Phaser.Physics.ARCADE);
+        //Iniciando a engine arcade (Simulação).
+        //this.physics.startSystem(Phaser.Physics.ARCADE);
 
         this.cursor = this.input.keyboard.createCursorKeys();
         this.btnAcao = this.input.keyboard.addKey([Phaser.Keyboard.SPACEBAR, Phaser.Keyboard.SHIFT, Phaser.Keyboard.R]);
@@ -92,10 +116,59 @@ MyGame.Game.prototype = {
                 }
             }
         }
+                 
+        this.physics.arcade.overlap(this.tiroInimigoLayer, this.playerLayer, (tiro, player) => {
+            this.animarColisao(player);
+
+            tiro.kill();
+
+            this.player.reset(400, 400);
+
+            this.gameOver();
+        });
+
+        this.physics.arcade.overlap(this.inimigoLayer, this.playerLayer, (inimigo, player) => {
+            this.animarColisao(inimigo);
+            this.animarColisao(player);
+
+            inimigo.kill();
+
+            this.player.reset(400, 400);
+
+            this.gameOver();
+        });
+
+        this.physics.arcade.overlap(this.tiroLayer, this.inimigoLayer, (tiro, inimigo) => {              
+            this.animarColisao(inimigo);
+
+            tiro.kill();
+
+            inimigo.reset(this.rand.between(0, 800), -50);
+
+            this.pontos += 10;
+        });
 
         this.movimentarInimigos();
         this.recarregarMissil();
         this.atualizarElementos();
+    },
+
+    animarColisao: function(sprite) {
+        explosao = this.explosaoLayer.getFirstExists(false);
+        if (explosao) {
+            explosao.animations.add('explodir');
+            explosao.reset(sprite.body.x, sprite.body.y);
+            explosao.play('explodir', 30, false, true);
+        }
+    },
+
+    gameOver: function() {
+        this.vidas --;
+
+        if (this.vidas <= 0) {
+            this.game.state.restart(true, true);
+            this.game.state.start('MainMenu');
+        }
     },
 
     movimentarInimigos: function() {
@@ -106,8 +179,11 @@ MyGame.Game.prototype = {
 
             if (inimigo.y > this.game.height) {
                 inimigo.y = -50;
-                inimigo.x = this.rand.between(0, 800);
+                inimigo.x = this.rand.between(10, 790);
                 inimigo.velocidade = this.rand.between(1, 2);
+
+                if (this.pontos > 0)
+                    this.pontos -= 10;
             }
 
             if (this.inimigos[i].y > this.game.height) {
@@ -125,8 +201,8 @@ MyGame.Game.prototype = {
 
         if (inimigo.sprite.y == inimigo.disparo) {
             if (!inimigo.missil) {
-                var missil = this.add.sprite(inimigo.sprite.x, inimigo.sprite.y, 'missil_inimigo');
-                this.inimigoLayer.add(missil);
+                var missil = this.add.sprite(inimigo.sprite.body.x, inimigo.sprite.body.y, 'missil_inimigo');
+                this.tiroInimigoLayer.add(missil);
 
                 inimigo.missil = missil;
             }
@@ -143,7 +219,7 @@ MyGame.Game.prototype = {
 
     gerarInimigos: function() {
         for (var i = 0; i < this.qntInimigos; i++) {
-            var inimigo = this.add.sprite(this.rand.between(0, 800), this.rand.between(-100, 600), 'inimigo');
+            var inimigo = this.add.sprite(this.rand.between(0, 790), -50, 'inimigo');
             this.inimigoLayer.add(inimigo);
 
             this.inimigos.push({
@@ -151,7 +227,7 @@ MyGame.Game.prototype = {
                 velocidade: this.rand.between(1, 3), 
                 missil: null, 
                 disparo: 0,
-                vida: 3
+                dano: 0
             });
         }
     },
@@ -168,7 +244,8 @@ MyGame.Game.prototype = {
                 var x = this.player.x + 15;
                 var y = this.player.y - 10;
 
-                missil = this.add.sprite(x, y, 'missil');
+                var missil = this.add.sprite(x, y, 'missil');
+                this.tiroLayer.add(missil);
 
                 this.tiro.push(missil);
 
@@ -181,6 +258,7 @@ MyGame.Game.prototype = {
                 var y = this.player.y - 10;
 
                 bala = this.add.sprite(x, y, 'bala');
+                this.tiroLayer.add(bala);
 
                 this.tiro.push(bala);
 
@@ -193,7 +271,7 @@ MyGame.Game.prototype = {
         if (this.elementosMapa.length > 0) {
             for (var i = 0; i < this.elementosMapa.length; i++) {
                 if (this.elementosMapa[i].y >= this.game.height) {
-                    this.elementosMapa[i].y = 0;
+                    this.elementosMapa[i].y = -50;
                     this.elementosMapa[i].x = this.rand.between(0,800);
                 }
 
@@ -205,5 +283,7 @@ MyGame.Game.prototype = {
     render: function () {
         this.game.debug.text('Disparos Ativos: ' + this.tiro.length, 32, 32);
         this.game.debug.text('Mísseis: ' + this.qntMissil, 32, 64);
+        this.game.debug.text('Vidas: ' + this.vidas, 32, 96);
+        this.game.debug.text('Pontos: ' + this.pontos, 32, 128);
     }
 };
