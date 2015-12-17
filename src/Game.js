@@ -19,6 +19,7 @@ MyGame.Game.prototype = {
         this.maxDanoInimigo = 3;
         this.vidas = 3;
         this.pontos = 0;
+        this.isTirosMultiplos = false;
     },
 
     create: function () {
@@ -107,12 +108,19 @@ MyGame.Game.prototype = {
 
         if (this.tiro.length > 0) {
             for (var i = 0; i < this.tiro.length; i++) {
-                var tiro = this.tiro[i];
+                var tiro = this.tiro[i].sprite;
                 tiro.y -= this.velocidadeMissel;
+
+                if (this.tiro[i].especial) {
+                    if (this.tiro[i].isDireita) 
+                        tiro.x += this.velocidadeMissel;
+                    else
+                        tiro.x -= this.velocidadeMissel;
+                }
 
                 if (tiro.y < -600) {
                     tiro.kill();
-                    this.tiro.splice(this.tiro.indexOf(tiro), 1);
+                    this.tiro.splice(this.tiro.indexOf(this.tiro[i]), 1);
                 }
             }
         }
@@ -247,7 +255,7 @@ MyGame.Game.prototype = {
                 var missil = this.add.sprite(x, y, 'missil');
                 this.tiroLayer.add(missil);
 
-                this.tiro.push(missil);
+                this.tiro.push({ sprite: missil });
 
                 this.tempoMissel = this.time.now + 200;
                 this.qntMissil --;
@@ -258,9 +266,21 @@ MyGame.Game.prototype = {
                 var y = this.player.y - 10;
 
                 bala = this.add.sprite(x, y, 'bala');
+
                 this.tiroLayer.add(bala);
 
-                this.tiro.push(bala);
+                this.tiro.push({ sprite: bala });
+
+                if (this.isTirosMultiplos) {
+                    bala1 = this.add.sprite(x, y, 'bala');
+                    bala2 = this.add.sprite(x, y, 'bala');
+
+                    this.tiroLayer.add(bala1);
+                    this.tiroLayer.add(bala2);
+
+                    this.tiro.push({ sprite: bala1, especial: true, isDireita: true });
+                    this.tiro.push({ sprite: bala2, especial: true, isDireita: false });
+                }
 
                 this.tempoBala = this.time.now + 200;
             }
