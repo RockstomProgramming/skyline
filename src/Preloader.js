@@ -16,6 +16,8 @@ MyGame.Preloader.prototype = {
         this.load.image('planta3', 'images/planta3.png');
         this.load.image('pedra', 'images/pedra.png');
         this.load.image('missil', 'images/missil.png');
+        this.load.image('tiroMultiplo', 'images/melhoria1.png');
+        this.load.image('melhoriaMissil', 'images/melhoria2.png');
         this.load.image('missil_inimigo', 'images/missil_inimigo.png');
         this.load.image('bala', 'images/bala2.png');
         this.load.image('inimigo', 'images/inimigo.png');
@@ -25,6 +27,6 @@ MyGame.Preloader.prototype = {
 	},
 
 	create: function () {
-		this.state.start('MainMenu');
+	       this.state.start('MainMenu');
 	}
 };

@@ -19,7 +19,7 @@ MyGame.Game.prototype = {
         this.maxDanoInimigo = 2;
         this.vidas = 3;
         this.pontos = 0;
-        this.isTirosMultiplos = true;
+        this.isTirosMultiplos = false;
     },
 
     create: function () {
@@ -64,6 +64,21 @@ MyGame.Game.prototype = {
             this.elementosMapa.push(elemento);
         }
 
+        this.tirosMultiplosLayer = this.add.group();
+        this.tirosMultiplosLayer.enableBody = true;
+        this.tirosMultiplosLayer.create(0.5, 0.5, 'tiroMultiplo');
+        this.melhoriaTiro = this.tirosMultiplosLayer.getFirstExists(true);
+
+        this.maisMissilLayer = this.add.group();
+        this.maisMissilLayer.enableBody = true;
+        this.maisMissilLayer.create(0.5, 0.5, 'melhoriaMissil');
+        this.melhoriaMissil = this.maisMissilLayer.getFirstExists(true);
+
+        this.elementosMapa.push(this.melhoriaTiro);
+        this.elementosMapa.push(this.melhoriaMissil);
+
+        this.game.time.events.add(Phaser.Timer.SECOND * 10, this.addMelhorias, this);
+
         this.player = this.add.sprite(400, 400, 'jogador');
         this.playerLayer.add(this.player);
 
@@ -80,11 +95,12 @@ MyGame.Game.prototype = {
 
         this.player.play('centro');
 
-        //Iniciando a engine arcade (Simulação).
-        //this.physics.startSystem(Phaser.Physics.ARCADE);
-
         this.cursor = this.input.keyboard.createCursorKeys();
         this.btnAcao = this.input.keyboard.addKey([Phaser.Keyboard.SPACEBAR, Phaser.Keyboard.SHIFT, Phaser.Keyboard.R]);
+    },
+
+    addMelhorias: function() {
+        this.melhoriaTiro.reset(this.rand.between(10, this.game.width - 10), 0.5);
     },
 
     update: function() {
@@ -103,26 +119,8 @@ MyGame.Game.prototype = {
         }
 
         this.atirar();
-
-        if (this.tiro.length > 0) {
-            for (var i = 0; i < this.tiro.length; i++) {
-                var tiro = this.tiro[i].sprite;
-                tiro.y -= this.velocidadeMissel;
-
-                if (this.tiro[i].especial) {
-                    if (this.tiro[i].isDireita) 
-                        tiro.x += this.velocidadeMissel;
-                    else
-                        tiro.x -= this.velocidadeMissel;
-                }
-
-                if (tiro.y < -600) {
-                    tiro.kill();
-                    this.tiro.splice(this.tiro.indexOf(this.tiro[i]), 1);
-                }
-            }
-        }
-                 
+        this.movimentarTiro();
+                
         this.physics.arcade.overlap(this.tiroInimigoLayer, this.playerLayer, (tiro, player) => {
             this.animarColisao(player);
 
@@ -147,43 +145,33 @@ MyGame.Game.prototype = {
         this.physics.arcade.overlap(this.tiroLayer, this.inimigoLayer, (tiro, inimigo) => {
             tiro.kill();
 
-            function getInimigo(array) {
-                for (var i = 0; i < array.length; i++) {
-                    if (array[i].sprite.name == inimigo.name) {
-                        return array[i];
-                    }
-                }
-            }
-
-            function getTiro(array) {
-                 for (var i = 0; i < array.length; i++) {
-                    if (array[i].sprite.name == tiro.name) {
-                        return array[i];
-                    }
-                }
-            }
-
-            var ini = getInimigo(this.inimigos);
-            var proj = getTiro(this.tiro);
-
-            if (proj.tipo == 'MISSIL')
-                ini.dano += 2;
+            if (tiro.tipo == 'MISSIL')
+                inimigo.dano += 2;
             else
-                ini.dano++;
+                inimigo.dano++;
 
-            if (ini.dano >= this.maxDanoInimigo) {
+            if (inimigo.dano >= this.maxDanoInimigo) {
                 this.animarColisao(inimigo);
 
                 inimigo.reset(this.rand.between(0, 800), -50);
 
                 this.pontos += 10;
-                ini.dano = 0;
+                inimigo.dano = 0;
             }
             
         });
 
+        this.physics.arcade.overlap(this.playerLayer, this.tirosMultiplosLayer, (player, melhoria) => {
+            melhoria.kill();
+            this.isTirosMultiplos = true;
+        });
+
+        this.physics.arcade.overlap(this.playerLayer, this.maisMissilLayer, (player, melhoria) => {
+            melhoria.kill();
+            this.qntMissil = 10;
+        });
+
         this.movimentarInimigos();
-        this.recarregarMissil();
         this.atualizarElementos();
     },
 
@@ -256,6 +244,7 @@ MyGame.Game.prototype = {
         for (var i = 0; i < this.qntInimigos; i++) {
             var inimigo = this.add.sprite(this.rand.between(0, 790), -50, 'inimigo');
             inimigo.name = this.guid();
+            inimigo.dano = 0;
 
             this.inimigoLayer.add(inimigo);
 
@@ -269,12 +258,6 @@ MyGame.Game.prototype = {
         }
     },
 
-    recarregarMissil: function() {
-        if (this.input.keyboard.isDown(Phaser.Keyboard.R)) {
-            this.qntMissil = 10;
-        }
-    },
-
     atirar: function() {
         if (this.input.keyboard.isDown(Phaser.Keyboard.SHIFT)) {
             if (this.time.now > this.tempoMissel && this.qntMissil > 0) {
@@ -282,10 +265,11 @@ MyGame.Game.prototype = {
                 var y = this.player.y - 10;
 
                 var missil = this.add.sprite(x, y, 'missil');
-                missil.name = this.guid();
+                missil.tipo = 'MISSIL';
+
                 this.tiroLayer.add(missil);
 
-                this.tiro.push({ sprite: missil, tipo: 'MISSIL' });
+                this.tiro.push(missil);
 
                 this.tempoMissel = this.time.now + 200;
                 this.qntMissil --;
@@ -296,27 +280,49 @@ MyGame.Game.prototype = {
                 var y = this.player.y - 10;
 
                 bala = this.add.sprite(x, y, 'bala');
-                bala.name = this.guid();
 
                 this.tiroLayer.add(bala);
 
-                this.tiro.push({ sprite: bala });
+                this.tiro.push(bala);
 
                 if (this.isTirosMultiplos) {
                     bala1 = this.add.sprite(x, y, 'bala');
-                    bala1.name = this.guid();
+                    bala1.especial = true;
+                    bala1.isDireita = true;
 
                     bala2 = this.add.sprite(x, y, 'bala');
-                    bala2.name = this.guid();
+                    bala2.especial = true;
+                    bala2.isDireita = false;
 
                     this.tiroLayer.add(bala1);
                     this.tiroLayer.add(bala2);
 
-                    this.tiro.push({ sprite: bala1, especial: true, isDireita: true });
-                    this.tiro.push({ sprite: bala2, especial: true, isDireita: false });
+                    this.tiro.push(bala1);
+                    this.tiro.push(bala2);
                 }
 
                 this.tempoBala = this.time.now + 200;
+            }
+        }
+    },
+
+    movimentarTiro: function() {
+        if (this.tiro.length > 0) {
+            for (var i = 0; i < this.tiro.length; i++) {
+                var tiro = this.tiro[i];
+                tiro.y -= this.velocidadeMissel;
+
+                if (tiro.especial) {
+                    if (tiro.isDireita) 
+                        tiro.x += this.velocidadeMissel;
+                    else
+                        tiro.x -= this.velocidadeMissel;
+                }
+
+                if (tiro.y < -600) {
+                    tiro.kill();
+                    this.tiro.splice(this.tiro.indexOf(this.tiro[i]), 1);
+                }
             }
         }
     },
